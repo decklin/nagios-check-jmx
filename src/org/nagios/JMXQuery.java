@@ -21,11 +21,11 @@ import javax.management.remote.JMXServiceURL;
 
 
 /**
- * 
+ *
  * JMXQuery is used for local or remote request of JMX attributes
  * It requires JRE 1.5 to be used for compilation and execution.
  * Look method main for description how it can be invoked.
- * 
+ *
  */
 public class JMXQuery {
 
@@ -38,18 +38,18 @@ public class JMXQuery {
 	private String attribute_key, info_key;
 	private String username, password;
 	private String object;
-	
+
 	private long checkData;
 	private Object infoData;
-	
+
 	private static final int RETURN_OK = 0; // 	 The plugin was able to check the service and it appeared to be functioning properly
-	private static final String OK_STRING = "JMX OK"; 
+	private static final String OK_STRING = "JMX OK";
 	private static final int RETURN_WARNING = 1; // The plugin was able to check the service, but it appeared to be above some "warning" threshold or did not appear to be working properly
-	private static final String WARNING_STRING = "JMX WARNING"; 
+	private static final String WARNING_STRING = "JMX WARNING";
 	private static final int RETURN_CRITICAL = 2; // The plugin detected that either the service was not running or it was above some "critical" threshold
-	private static final String CRITICAL_STRING = "JMX CRITICAL"; 
+	private static final String CRITICAL_STRING = "JMX CRITICAL";
 	private static final int RETURN_UNKNOWN = 3; // Invalid command line arguments were supplied to the plugin or low-level failures internal to the plugin (such as unable to fork, or open a tcp socket) that prevent it from performing the specified operation. Higher-level errors (such as name resolution errors, socket timeouts, etc) are outside of the control of plugins and should generally NOT be reported as UNKNOWN states.
-	private static final String UNKNOWN_STRING = "JMX UNKNOWN"; 
+	private static final String UNKNOWN_STRING = "JMX UNKNOWN";
 
 
 	private void connect() throws IOException
@@ -62,7 +62,7 @@ public class JMXQuery {
          connector = JMXConnectorFactory.connect(jmxUrl, env);
          connection = connector.getMBeanServerConnection();
 	}
-	
+
 
 	private void disconnect() throws IOException {
 		if(connector!=null){
@@ -70,15 +70,15 @@ public class JMXQuery {
 			connector = null;
 		}
 	}
-	
-	
+
+
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		
+
 			JMXQuery query = new JMXQuery();
-			
+
 			try{
 				query.parse(args);
 				query.connect();
@@ -95,19 +95,19 @@ public class JMXQuery {
 					int status = query.report(e, System.out);
 					System.exit(status);
 				}
-			}			
+			}
 		}
 
 	private int report(Exception ex, PrintStream out)
 	{
 		if(ex instanceof ParseError){
 			out.print(UNKNOWN_STRING+" ");
-			reportException(ex, out);		
+			reportException(ex, out);
 			out.println(" Usage: check_jmx -help ");
 			return RETURN_UNKNOWN;
 		}else{
 			out.print(CRITICAL_STRING+" ");
-			reportException(ex, out);		
+			reportException(ex, out);
 			out.println();
 			return RETURN_CRITICAL;
 		}
@@ -120,9 +120,9 @@ public class JMXQuery {
 		else{
 			out.print(ex.getMessage()+" connecting to "+object+" by URL "+url);
 		}
-	
-		
-		if(verbatim>=3)		
+
+
+		if(verbatim>=3)
 			ex.printStackTrace(out);
 
 	}
@@ -139,7 +139,7 @@ public class JMXQuery {
 	{
 		int status;
 		if(compare( critical, warning<critical)){
-			status = RETURN_CRITICAL;			
+			status = RETURN_CRITICAL;
 			out.print(CRITICAL_STRING+" ");
 		}else if (compare( warning, warning<critical)){
 			status = RETURN_WARNING;
@@ -148,21 +148,21 @@ public class JMXQuery {
 			status = RETURN_OK;
 			out.print(OK_STRING+" ");
 		}
-		
+
 		if(infoData==null || verbatim>=2){
 			if(attribute_key!=null)
 				out.print(attribute+'.'+attribute_key+'='+checkData);
 			else
 				out.print(attribute+'='+checkData);
 		}
-			
+
 		if(infoData!=null){
 			if(infoData instanceof CompositeDataSupport)
 				report((CompositeDataSupport)infoData, out);
 			else
 				out.print(infoData.toString());
 		}
-		
+
 		out.println();
 		return status;
 	}
@@ -185,7 +185,7 @@ public class JMXQuery {
 		if(more)
 			return checkData>=level;
 		else
-			return checkData<=level;	
+			return checkData<=level;
 	}
 
 
@@ -208,10 +208,10 @@ public class JMXQuery {
 		} else{
 			checkData = parseData(attr);
 		}
-		
+
 		if(info_attribute!=null){
-			Object info_attr = info_attribute.equals(attribute) ? 
-									attr : 
+			Object info_attr = info_attribute.equals(attribute) ?
+									attr :
 									connection.getAttribute(new ObjectName(object), info_attribute);
 			if(info_key!=null && (info_attr instanceof CompositeDataSupport) && verbatim<4){
 				CompositeDataSupport cds = (CompositeDataSupport) attr;
@@ -220,11 +220,11 @@ public class JMXQuery {
 				infoData = info_attr;
 			}
 		}
-		
+
 	}
 
 	private long parseData(Object o) {
-		
+
 		if (o instanceof Number) {
 			return ((Number)o).longValue();
 		}
@@ -232,7 +232,7 @@ public class JMXQuery {
 			boolean b = ((Boolean)o).booleanValue();
 			return b ? 1 : 0;
 		}
-		else { 
+		else {
 			return Long.parseLong(o.toString());
 		}
 	}
@@ -271,14 +271,14 @@ public class JMXQuery {
 					this.critical = Long.parseLong(args[++i]);
 				}
 			}
-			
+
 			if(url==null || object==null || attribute==null)
 				throw new Exception("Required options not specified");
-			
+
 		}catch(Exception e){
 			throw new ParseError(e);
 		}
-		
+
 	}
 
 
@@ -300,7 +300,7 @@ public class JMXQuery {
 			} catch (IOException e) {
 				out.println(e);
 			}
-		}	
+		}
 	}
 
 
