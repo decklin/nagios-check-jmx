@@ -8,6 +8,9 @@ Usage: check_jmx -U url -O object_name -A attribute [-K compound_key] [-I attrib
 -U
 	JMX URL, for example: "service:jmx:rmi:///jndi/rmi://localhost:1616/jmxrmi"
 
+-P
+	PID of process on local machine
+
 -O
     Object name to be checked, for example, "java.lang:type=Memory"
 

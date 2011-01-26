@@ -18,6 +18,8 @@ import javax.management.openmbean.CompositeType;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
+import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.VirtualMachineDescriptor;
 
 
 /**
@@ -30,6 +32,7 @@ import javax.management.remote.JMXServiceURL;
 public class JMXQuery {
 
 	private String url;
+	private String pid;
 	private int verbatim;
 	private JMXConnector connector;
 	private MBeanServerConnection connection;
@@ -50,10 +53,16 @@ public class JMXQuery {
 	private static final String CRITICAL_STRING = "JMX CRITICAL";
 	private static final int RETURN_UNKNOWN = 3; // Invalid command line arguments were supplied to the plugin or low-level failures internal to the plugin (such as unable to fork, or open a tcp socket) that prevent it from performing the specified operation. Higher-level errors (such as name resolution errors, socket timeouts, etc) are outside of the control of plugins and should generally NOT be reported as UNKNOWN states.
 	private static final String UNKNOWN_STRING = "JMX UNKNOWN";
+	private static final String CONNECTOR_ADDRESS = "com.sun.management.jmxremote.localConnectorAddress";
 
 
-	private void connect() throws IOException
+	private void connect() throws IOException, com.sun.tools.attach.AttachNotSupportedException
 	{
+         if (pid != null) {
+         	final VirtualMachine vm = VirtualMachine.attach(pid);
+         	url = vm.getAgentProperties().getProperty(CONNECTOR_ADDRESS);
+         	assert url != null;
+         }
          JMXServiceURL jmxUrl = new JMXServiceURL(url);
          Map<String,Object> env = new HashMap<String,Object>();
          if (username != null) {
@@ -249,6 +258,8 @@ public class JMXQuery {
 					System.exit(RETURN_UNKNOWN);
 				}else if(option.equals("-U")){
 					this.url = args[++i];
+				}else if(option.equals("-P")){
+					this.pid = args[++i];
 				}else if(option.equals("-O")){
 					this.object = args[++i];
 				}else if(option.equals("-A")){
@@ -272,7 +283,7 @@ public class JMXQuery {
 				}
 			}
 
-			if(url==null || object==null || attribute==null)
+			if((url==null && pid==null) || object==null || attribute==null)
 				throw new Exception("Required options not specified");
 
 		}catch(Exception e){
