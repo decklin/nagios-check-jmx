@@ -220,6 +220,7 @@ public class JMXQuery {
 		try{
 			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(path));
 			out.writeObject(savedChecks);
+			out.flush();
 			out.close();
 		}catch (Exception e){
 			System.out.println(e);
