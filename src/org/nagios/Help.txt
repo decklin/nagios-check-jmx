@@ -20,6 +20,15 @@ Usage: check_jmx -U url -O object_name -A attribute [-K compound_key] [-I attrib
 -K
     Attribute key for -A attribute compound data, for example, "used" (optional)
 
+-a
+    File to store statistics in to print average (optional)
+
+-r
+    File to store statistics in to print rate (optional)
+
+-t
+    Time in seconds to retain statistics
+
 -I
     Attribute of the object containing information for text output (optional)
 

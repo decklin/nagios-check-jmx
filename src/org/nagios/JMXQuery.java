@@ -4,12 +4,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.Arrays;
+import java.util.Collections;
 
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
@@ -38,12 +43,15 @@ public class JMXQuery {
 	private MBeanServerConnection connection;
 	private long warning, critical;
 	private String attribute, info_attribute;
+	private String avg_data_path, rate_data_path;
+	private long data_time = 600;
 	private String attribute_key, info_key;
 	private String username, password;
 	private String object;
 
 	private long checkData;
 	private Object infoData;
+	private Map<Long,Long> savedChecks;
 
 	private static final int RETURN_OK = 0; // 	 The plugin was able to check the service and it appeared to be functioning properly
 	private static final String OK_STRING = "JMX OK";
@@ -147,6 +155,15 @@ public class JMXQuery {
 	private int report(PrintStream out)
 	{
 		int status;
+
+		if(avg_data_path!=null){
+			appendCheck(avg_data_path, checkData);
+			checkData = (long)average();
+		}else if(rate_data_path!=null){
+			appendCheck(rate_data_path, checkData);
+			checkData = (long)rate();
+		}
+
 		if(compare( critical, warning<critical)){
 			status = RETURN_CRITICAL;
 			out.print(CRITICAL_STRING+" ");
@@ -161,6 +178,10 @@ public class JMXQuery {
 		if(infoData==null || verbatim>=2){
 			if(attribute_key!=null)
 				out.print(attribute+'.'+attribute_key+'='+checkData);
+			else if(avg_data_path!=null)
+				out.print(attribute+"[avg]="+checkData);
+			else if(rate_data_path!=null)
+				out.print(attribute+"[/min]="+checkData);
 			else
 				out.print(attribute+'='+checkData);
 		}
@@ -174,6 +195,47 @@ public class JMXQuery {
 
 		out.println();
 		return status;
+	}
+
+	private void appendCheck(String path, long checkData) {
+		readChecks(path);
+		savedChecks.put(System.currentTimeMillis(), checkData);
+		for(Long t : savedChecks.keySet()){
+			if(t < System.currentTimeMillis() - data_time * 1000){
+				savedChecks.remove(t);
+			}
+		}
+		writeChecks(path);
+	}
+	private void readChecks(String path) {
+		try{
+			ObjectInputStream in = new ObjectInputStream(new FileInputStream(path));
+			savedChecks = (Map<Long,Long>)in.readObject();
+			in.close();
+		}catch (Exception e){
+			savedChecks = new HashMap<Long,Long>();
+		}
+	}
+	private void writeChecks(String path) {
+		try{
+			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(path));
+			out.writeObject(savedChecks);
+			out.close();
+		}catch (Exception e){
+			System.out.println(e);
+		}
+	}
+	private double average() {
+		double sum = 0;
+		for(long v : savedChecks.values()){
+			sum += v;
+		}
+		return sum / savedChecks.values().size();
+	}
+	private double rate() {
+		long earliest = Collections.min(savedChecks.keySet());
+		long latest = Collections.max(savedChecks.keySet());
+		return (savedChecks.get(latest) - savedChecks.get(earliest)) / (data_time / 60);
 	}
 
 	private void report(CompositeDataSupport data, PrintStream out) {
@@ -264,6 +326,12 @@ public class JMXQuery {
 					this.object = args[++i];
 				}else if(option.equals("-A")){
 					this.attribute = args[++i];
+				}else if(option.equals("-a")){
+					this.avg_data_path = args[++i];
+				}else if(option.equals("-r")){
+					this.rate_data_path = args[++i];
+				}else if(option.equals("-t")){
+					this.data_time = Long.parseLong(args[++i]);
 				}else if(option.equals("-I")){
 					this.info_attribute = args[++i];
 				}else if(option.equals("-J")){
