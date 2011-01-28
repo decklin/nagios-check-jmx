@@ -201,9 +201,10 @@ public class JMXQuery {
 	private void appendCheck(String path, long checkData) {
 		readChecks(path);
 		savedChecks.put(System.currentTimeMillis(), checkData);
-		for(Long t : savedChecks.keySet()){
+		for(Iterator<Long> it = savedChecks.keySet().iterator(); it.hasNext();){
+			Long t = it.next();
 			if(t < System.currentTimeMillis() - data_time * 1000){
-				savedChecks.remove(t);
+				it.remove();
 			}
 		}
 		writeChecks(path);
