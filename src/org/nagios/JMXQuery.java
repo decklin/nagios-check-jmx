@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintStream;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -218,10 +219,12 @@ public class JMXQuery {
 	}
 	private void writeChecks(String path) {
 		try{
-			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(path));
+			String tmpPath = path + ".new";
+			ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(tmpPath));
 			out.writeObject(savedChecks);
 			out.flush();
 			out.close();
+			new File(tmpPath).renameTo(new File(path));
 		}catch (Exception e){
 			System.out.println(e);
 		}
