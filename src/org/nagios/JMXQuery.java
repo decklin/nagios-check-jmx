@@ -179,9 +179,9 @@ public class JMXQuery {
 			if(attribute_key!=null)
 				out.print(attribute+'.'+attribute_key+'='+checkData);
 			else if(avg_data_path!=null)
-				out.print(attribute+"[avg]="+checkData);
+				out.print(attribute+"[avg/"+data_time+"sec]="+checkData);
 			else if(rate_data_path!=null)
-				out.print(attribute+"[/min]="+checkData);
+				out.print(attribute+"[rate/"+data_time+"sec]="+checkData);
 			else
 				out.print(attribute+'='+checkData);
 		}
@@ -236,7 +236,7 @@ public class JMXQuery {
 	private double rate() {
 		long earliest = Collections.min(savedChecks.keySet());
 		long latest = Collections.max(savedChecks.keySet());
-		return (savedChecks.get(latest) - savedChecks.get(earliest)) / (data_time / 60);
+		return savedChecks.get(latest) - savedChecks.get(earliest);
 	}
 
 	private void report(CompositeDataSupport data, PrintStream out) {
